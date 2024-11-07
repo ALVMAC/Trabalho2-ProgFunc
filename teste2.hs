@@ -36,15 +36,38 @@ execLOD ::Int -> (Memoria, Acumulador, FlagEQZ) -> (Memoria, Acumulador, FlagEQZ
 execLOD end (mem, acc, eqz) = (mem, readMem mem end, eqz)
 
 execSTO :: Int -> (Memoria, Acumulador, FlagEQZ) -> (Memoria, Acumulador, FlagEQZ)
-execJMP ::
-execJMZ ::
-execCPE ::
-execADD ::
-execSUB ::
-execHLT ::
+execSTO end (mem, acc, eqz) = (writeMem mem end acc, acc, eqz)
+
+execJMP :: Int -> (Memoria, Acumulador, FlagEQZ) -> (Memoria, Acumulador, FlagEQZ)
+execJMP end (mem, acc, eqz) = (mem, acc, eqz)
+
+
+execJMZ :: Int -> (Memoria, Acumulador, FlagEQZ) -> (Memoria, Acumulador, FlagEQZ)
+execJMZ end (mem, acc, eqz)
+    | eqz == 1  = (mem, acc, eqz)  -- Salta se eqz for 1 (acumulador == 0)
+    | otherwise = (mem, acc, eqz)  -- Caso contrário, não faz nada
+
+
+execCPE :: Int -> (Memoria, Acumulador, FlagEQZ) -> (Memoria, Acumulador, FlagEQZ)
+execCPE end (mem, acc, _)
+    | acc == readMem mem end = (mem, acc, 1)  -- Se forem iguais, seta eqz para 1
+    | otherwise              = (mem, acc, 0)  -- Caso contrário, seta eqz para 0
+
+
+execADD :: Int -> (Memoria, Acumulador, FlagEQZ) -> (Memoria, Acumulador, FlagEQZ)
+execADD end (mem, acc, eqz) = (mem, acc + readMem mem end, eqz)
+
+
+execSUB :: Int -> (Memoria, Acumulador, FlagEQZ) -> (Memoria, Acumulador, FlagEQZ)
+execSUB end (mem, acc, eqz) = (mem, acc - readMem mem end, eqz)
+
+
+execHLT :: (Memoria, Acumulador, FlagEQZ) -> (Memoria, Acumulador, FlagEQZ)
+execHLT (mem, acc, eqz) = (mem, acc, eqz)
+
 -- do nosso codigo de dicas
 execNOP :: (Memoria, Acumulador, FlagEQZ) -> (Memoria, Acumulador, FlagEQZ) 
-execNOP = (mem, acc, eqz) = (mem, acc, eqz)
+execNOP (mem, acc, eqz) = (mem, acc, eqz)
 
 -- altera a entrada para Memoria que é a lista de tuplas que tinha antes na função da prof.
 readMem :: Memoria -> Int -> Int
@@ -53,7 +76,10 @@ readMem (m:ms) e
     | e /= fst m = readMem ms e
 
 writeMem :: Memoria -> Int -> Int -> Memoria
-writeMem [] end val = [(end, val)]
+writeMem _ end _ | end >= 256 = error "Erro: endereço precisa estar entre 0 e 255"
+writeMem _ _ val | val > 255 = error "Erro: valor precisa estar entre 0 e 255 (8 bits) parceiro"
+writeMem [] end val = [(end, val)] 
 writeMem ((end', val'):ms) end val
-    | end == end' = (end, val) : ms
+    | end == end' = (end, val) : ms  
     | otherwise = (end', val') : writeMem ms end val
+
